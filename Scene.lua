@@ -8,19 +8,13 @@ Scene.BaseScene.nRtnValue = 0
 Scene.BaseScene.vSceneList = {}
 
 --场景初始化函数
-function Scene.BaseScene:Init()
-    return
-end
+function Scene.BaseScene:Init() end
 
 --场景更新函数(每帧执行一次)
-function Scene.BaseScene:Update()
-    return
-end
+function Scene.BaseScene:Update() end
 
 --场景垃圾回收函数
-function Scene.BaseScene:Unload()
-    return
-end
+function Scene.BaseScene:Unload() end
 
 function Scene.BaseScene:New()
     local o = 
