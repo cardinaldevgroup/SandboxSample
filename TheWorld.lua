@@ -57,29 +57,6 @@ local function canMove()
     end
 end
 
-local function canMoveY()
-    if _MoveState.up then
-        local CollisionX1 = math.ceil((Resource.Leader.Rect.x + 2) / 30)
-        local CollisionX2 = math.ceil((Resource.Leader.Rect.x + 28) / 30)
-        local CollisionY = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 30) / 30) + 1
-        if Resource.Map[CollisionY][CollisionX1] == 0 and Resource.Map[CollisionY][CollisionX2] == 0 then
-            return true
-        end
-    else
-        return false
-    end
-    if _MoveState.down then
-        local CollisionX1 = math.ceil((Resource.Leader.Rect.x + 2) / 30)
-        local CollisionX2 = math.ceil((Resource.Leader.Rect.x + 28) / 30)
-        local CollisionY = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 90) / 30) + 1
-        if Resource.Map[CollisionY][CollisionX1] == 0 and Resource.Map[CollisionY][CollisionX2] == 0 then
-            return true
-        end
-    else
-        return false
-    end
-end
-
 function TheWorld.Update()
     Window.ClearWindow()
 
@@ -145,20 +122,42 @@ function TheWorld.Update()
     --跳跃的情况,以及下落
     local tempCollisionX1 = math.ceil((Resource.Leader.Rect.x + 2) / 30)
     local tempCollisionX2 = math.ceil((Resource.Leader.Rect.x + 28) / 30)
-    local tempCollisionY = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 90) / 30) + 1
+    local tempCollisionY1 = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 90) / 30) + 1
+    local tempCollisionY2 = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 30) / 30) + 1
     --如果玩家脚下没有方块,那么他将自由落体
-    if Resource.Map[tempCollisionY][tempCollisionX1] == 0 and Resource.Map[tempCollisionY][tempCollisionX2] == 0 then
-        if Resource.Leader.ySpeed < Resource.Leader.yMaxSpeed then
+    if Resource.Map[tempCollisionY1][tempCollisionX1] == 0 and Resource.Map[tempCollisionY1][tempCollisionX2] == 0 then
+        if Resource.Leader.ySpeed < 0 and _MoveState.up == false then
+            _MoveState.up = true
+        elseif Resource.Leader.ySpeed < 0 and _MoveState.up then
             Resource.Leader.ySpeed = Resource.Leader.ySpeed + Global.GRAVITY
-        elseif Resource.Leader.ySpeed >= Resource.Leader.yMaxSpeed then
+        elseif Resource.Leader.ySpeed >= 0 and _MoveState.up then
+            _MoveState.up = false
+            _MoveState.down = true
+        elseif Resource.Leader.ySpeed >= 0 and Resource.Leader.ySpeed < Resource.Leader.yMaxSpeed and _MoveState.down then
+            Resource.Leader.ySpeed = Resource.Leader.ySpeed + Global.GRAVITY
+        elseif Resource.Leader.ySpeed >= Resource.Leader.yMaxSpeed and _MoveState.down then
             Resource.Leader.ySpeed = Resource.Leader.yMaxSpeed
         end
-    --如果玩家脚下有方块,那么玩家将瞬间静止
-    elseif Resource.Map[tempCollisionY][tempCollisionX1] ~= 0 and Resource.Map[tempCollisionY][tempCollisionX2] ~= 0 then
-        Resource.Leader.ySpeed = 0
-        if _Direction.up then
-            Resource.Leader.ySpeed = -30
+        if Resource.Leader.ySpeed == 0 and _MoveState.down == false and _MoveState.up == false then
+            _MoveState.down = true
+            Resource.Leader.ySpeed = Resource.Leader.ySpeed + Global.GRAVITY
         end
+    --如果玩家脚下有方块,那么玩家将瞬间静止
+    elseif Resource.Map[tempCollisionY1][tempCollisionX1] ~= 0 or Resource.Map[tempCollisionY1][tempCollisionX2] ~= 0 then
+        if _MoveState.down then
+            Resource.Leader.ySpeed = 0
+            Resource.Leader.Rect.y = tempCollisionY1 * 30 - 120
+            _MoveState.down = false
+        end
+        if _Direction.up then
+            Resource.Leader.ySpeed = 0 - Resource.Leader.JumpAbility
+        end
+    end
+    --如果玩家头顶有方块阻挡,则玩家瞬间速度为0,且开始下落
+    if (Resource.Map[tempCollisionY2][tempCollisionX1] ~= 0 or Resource.Map[tempCollisionY2][tempCollisionX2] ~= 0) and _MoveState.up then
+        _MoveState.up = false
+        _MoveState.down = true
+        Resource.Leader.ySpeed = 0
     end
 
     --每帧更新玩家的位置
