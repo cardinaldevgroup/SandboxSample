@@ -9,9 +9,11 @@ Resource.mountain = Graphic.LoadImageFromFile("Resource/Image/Mountain.png")
 
 local block = Graphic.CreateTexture(Resource.block)
 
---绿幕角色
+--绿幕贴图
 Resource.CharacterImage = Graphic.LoadImageFromFile("Resource/Image/Character.png")
 Resource.CharacterImage:SetColorKey(true, {r = 0, g = 255, b = 0, a = 255})
+Resource.cracks = Graphic.LoadImageFromFile("Resource/Image/Crack.png")
+Resource.cracks:SetColorKey(true, {r = 0, g = 255, b = 0, a = 255})
 
 --初始主角信息
 Resource.Leader =
@@ -43,6 +45,23 @@ for i = 1, 7 do
         }
     }
 end
+
+--4种裂缝依次排序
+Resource.arrayCracks = {}
+for i = 1, 4 do
+    Resource.arrayCracks[i] = 
+    {
+        Rect = {
+            x = (i - 1) * 100,
+            y = 0,
+            w = 100,
+            h = 100
+        }
+    }
+end
+
+--所有方块的硬度
+Resource.Hardness = {40, 40, 80, 80, 80, 60, 20}
 
 --生成一个400格高,2000格宽的世界(规模有点大呢)
 Resource.Map = {}

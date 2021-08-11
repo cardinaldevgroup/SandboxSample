@@ -15,15 +15,24 @@ local Background2Shape = {x = 0, y = 0, w = 0, h = 300}
 local MountainRect = {x = 0, y = 0, w = 1600, h = Global.WINDOWSIZE_H}
 local Mountain2Rect = {x = 1600, y = 0, w = 1600, h = Global.WINDOWSIZE_H}
 
+local BreakingBlock = 0
+local Position2 = {x = 0, y = 0}
+local tempHardness = 0
+local crackRect = {x = 0, y = 0, w = 30, h = 30}
+local isBreaking = false
+
 function TheWorld.Init()
     TheWorld.sky = Graphic.CreateTexture(Resource.sky)
     TheWorld.mountain = Graphic.CreateTexture(Resource.mountain)
+    TheWorld.cracks = Graphic.CreateTexture(Resource.cracks)
     Resource.CreateWorld()
     Resource.Leader.Layer = 1
     table.insert(Resource.vObjectTable, 1, Resource.Leader)
     Resource.Camera.Init(Resource.Leader)
 end
 
+--鼠标是否按下
+local _CursorState = {left = false, right = false, middle = false}
 --玩家目前按下的某个方向的键
 local _Direction = {left = false, right = false, up = false}
 --角色正在朝向移动的方向
@@ -64,18 +73,30 @@ function TheWorld.Update()
         local event = Interactivity.GetEventType()
         if event == Interactivity.EVENT_QUIT then
             TheWorld.nRtnValue = -1
-        elseif event == Interactivity.EVENT_KEYDOWN_LEFT then
+        elseif event == Interactivity.EVENT_KEYDOWN_A then
             _Direction.left = true
-        elseif event == Interactivity.EVENT_KEYUP_LEFT then
+        elseif event == Interactivity.EVENT_KEYUP_A then
             _Direction.left = false
-        elseif event == Interactivity.EVENT_KEYDOWN_RIGHT then
+        elseif event == Interactivity.EVENT_KEYDOWN_D then
             _Direction.right = true
-        elseif event == Interactivity.EVENT_KEYUP_RIGHT then
+        elseif event == Interactivity.EVENT_KEYUP_D then
             _Direction.right = false
-        elseif event == Interactivity.EVENT_KEYDOWN_UP then
+        elseif event == Interactivity.EVENT_KEYDOWN_W then
             _Direction.up = true
-        elseif event == Interactivity.EVENT_KEYUP_UP then
+        elseif event == Interactivity.EVENT_KEYUP_W then
             _Direction.up = false
+        elseif event == Interactivity.EVENT_MOUSEBTNDOWN_LEFT then
+            _CursorState.left = true
+        elseif event == Interactivity.EVENT_MOUSEBTNDOWN_RIGHT then
+            _CursorState.right = true
+        elseif event == Interactivity.EVENT_MOUSEBTNDOWN_MIDDLE then
+            _CursorState.middle = true
+        elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
+            _CursorState.left = false
+        elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
+            _CursorState.right = false
+        elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
+            _CursorState.middle = false
         end
     end
 
@@ -222,6 +243,44 @@ function TheWorld.Update()
 
     --摄像机输出
     Resource.Camera.Output()
+
+        --当方块在人物6格范围内且左键按下他即可破坏掉他
+    --如果鼠标对准的方块不是上一帧对准的方块则破坏重置
+    local CursorPosition = Interactivity.GetCursorPosition()
+    local PlayerPosition = {x = Resource.Leader.Rect.x + Resource.Leader.Rect.w / 2, y = Resource.Leader.Rect.y + Resource.Leader.Rect.h / 2}
+    local CursorPositionW = {x = CursorPosition.x + Resource.Camera.Rect.x, y = CursorPosition.y + Resource.Camera.Rect.y}
+    local Position1 = {x = math.ceil(CursorPositionW.x / 30), y = math.ceil(CursorPositionW.y / 30)}
+    if _CursorState.left and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 240 and Position2.x == Position1.x and Position2.y == Position1.y then
+        --检测鼠标位置是否大于0的原因在于,鼠标在上面的边框时也会获取位置,这有可能导致超出边界
+        if Position1.y > 0 and isBreaking == false then
+            if Resource.Map[Position1.y][Position1.x] ~= 0 then
+                isBreaking = true
+                tempHardness = Resource.Hardness[Resource.Map[Position1.y][Position1.x]]
+                BreakingBlock = tempHardness
+                crackRect.x, crackRect.y = (Position1.x - 1) * 30 - Resource.Camera.Rect.x, (Position1.y - 1) * 30 - Resource.Camera.Rect.y
+            end
+        elseif isBreaking == true and BreakingBlock > 0 then
+            BreakingBlock = BreakingBlock - 1
+            local progress = BreakingBlock / tempHardness
+            if progress >= 0.75 and progress < 1 then
+                Graphic.CopyReshapeTexture(TheWorld.cracks, Resource.arrayCracks[1].Rect, crackRect)
+            elseif progress >= 0.5 and progress < 0.75 then
+                Graphic.CopyReshapeTexture(TheWorld.cracks, Resource.arrayCracks[2].Rect, crackRect)
+            elseif progress >= 0.25 and progress < 0.5 then
+                Graphic.CopyReshapeTexture(TheWorld.cracks, Resource.arrayCracks[3].Rect, crackRect)
+            elseif progress > 0 and progress < 0.25 then
+                Graphic.CopyReshapeTexture(TheWorld.cracks, Resource.arrayCracks[4].Rect, crackRect)
+            end
+        elseif BreakingBlock <= 0 then
+            Resource.Map[Position1.y][Position1.x] = 0
+            BreakingBlock = 0
+            isBreaking = false
+        end
+    elseif Position2.x ~= Position1.x or Position2.y ~= Position1.y then
+        isBreaking = false
+        BreakingBlock = 0
+    end
+    Position2.x, Position2.y = Position1.x, Position1.y
 
     Window.UpdateWindow()
 end
