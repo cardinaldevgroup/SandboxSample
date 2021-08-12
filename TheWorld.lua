@@ -8,19 +8,25 @@ Algorithm = UsingModule("Algorithm")
 TheWorld = {}
 TheWorld = Scene.BaseScene:New()
 
+--背景天空相关变量
 local BackgroundRect = {x = 0, y = 0, w = Global.WINDOWSIZE_W, h = 300}
 local BackgroundShape = {x = 0, y = 0, w = Global.WINDOWSIZE_W, h = 300}
 local Background2Rect = {x = Global.WINDOWSIZE_W, y = 0, w = 0, h = 300}
 local Background2Shape = {x = 0, y = 0, w = 0, h = 300}
 
+--背景山相关变量
 local MountainRect = {x = 0, y = 0, w = 1600, h = Global.WINDOWSIZE_H}
 local Mountain2Rect = {x = 1600, y = 0, w = 1600, h = Global.WINDOWSIZE_H}
 
+--破坏方块相关变量
 local BreakingBlock = 0
 local Position2 = {x = 0, y = 0}
 local tempHardness = 0
 local crackRect = {x = 0, y = 0, w = 30, h = 30}
 local isBreaking = false
+
+--背包模块相关变量
+local isKnapsackOpen = false
 
 function TheWorld.Init()
     TheWorld.sky = Graphic.CreateTexture(Resource.sky)
@@ -32,6 +38,8 @@ function TheWorld.Init()
     Resource.Camera.Init(Resource.Leader)
 end
 
+--键盘上的某些键位是否按下
+local _KeyboardState = {E = false}
 --鼠标是否按下
 local _CursorState = {left = false, right = false, middle = false}
 --玩家目前按下的某个方向的键
@@ -98,6 +106,10 @@ function TheWorld.Update()
             _CursorState.right = false
         elseif event == Interactivity.EVENT_MOUSEBTNUP_MIDDLE then
             _CursorState.middle = false
+        elseif event == Interactivity.EVENT_KEYDOWN_E then
+            _KeyboardState.E = true
+        elseif event == Interactivity.EVENT_KEYUP_E then
+            _KeyboardState.E = false
         end
     end
 
@@ -283,8 +295,8 @@ function TheWorld.Update()
     end
     Position2.x, Position2.y = Position1.x, Position1.y
 
-    --如果按下右键,则返回鼠标信息
-    if _CursorState.right then
+    --如果按下中键,则返回鼠标信息
+    if _CursorState.middle then
         Debug.ConsoleLog("当前鼠标在屏幕位置("..CursorPosition.x..","..CursorPosition.y..")")
         Debug.ConsoleLog("当前鼠标在世界位置("..CursorPosition.x + Resource.Camera.Rect.x..","..CursorPosition.y + Resource.Camera.Rect.y..")")
     end
