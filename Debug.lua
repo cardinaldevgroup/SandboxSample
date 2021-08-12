@@ -19,7 +19,7 @@ local _show_caller_info = true
     返回值：
         [无]
     示例：
-        Debug.Log("HelloWorld", Debug.WARN)
+        Debug.ConsoleLog("HelloWorld", Debug.INFO)
         可能的输出为：[INFO][21-08-12 09:24:37][./scripts/VisualConsole.lua[21]:PushText]HelloWorld
 --]]
 _module.ConsoleLog = function(content, type)

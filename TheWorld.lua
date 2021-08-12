@@ -1,3 +1,4 @@
+Debug = UsingModule("Debug")
 Scene = UsingModule("Scene")
 Resource = UsingModule("Resource")
 Window = UsingModule("Window")
@@ -93,9 +94,9 @@ function TheWorld.Update()
             _CursorState.middle = true
         elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
             _CursorState.left = false
-        elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
+        elseif event == Interactivity.EVENT_MOUSEBTNUP_RIGHT then
             _CursorState.right = false
-        elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
+        elseif event == Interactivity.EVENT_MOUSEBTNUP_MIDDLE then
             _CursorState.middle = false
         end
     end
@@ -141,8 +142,8 @@ function TheWorld.Update()
     end
 
     --跳跃的情况,以及下落
-    local tempCollisionX1 = math.ceil((Resource.Leader.Rect.x + 2) / 30)
-    local tempCollisionX2 = math.ceil((Resource.Leader.Rect.x + 28) / 30)
+    local tempCollisionX1 = math.floor((Resource.Leader.Rect.x + 2) / 30) + 1
+    local tempCollisionX2 = math.floor((Resource.Leader.Rect.x + 28) / 30) + 1
     local tempCollisionY1 = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 90) / 30) + 1
     local tempCollisionY2 = math.floor((Resource.Leader.Rect.y + Resource.Leader.ySpeed + 30) / 30) + 1
     --如果玩家脚下没有方块,那么他将自由落体
@@ -250,16 +251,16 @@ function TheWorld.Update()
     local PlayerPosition = {x = Resource.Leader.Rect.x + Resource.Leader.Rect.w / 2, y = Resource.Leader.Rect.y + Resource.Leader.Rect.h / 2}
     local CursorPositionW = {x = CursorPosition.x + Resource.Camera.Rect.x, y = CursorPosition.y + Resource.Camera.Rect.y}
     local Position1 = {x = math.ceil(CursorPositionW.x / 30), y = math.ceil(CursorPositionW.y / 30)}
-    if _CursorState.left and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 240 and Position2.x == Position1.x and Position2.y == Position1.y then
+    if _CursorState.left and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 120 and Position2.x == Position1.x and Position2.y == Position1.y then
         --检测鼠标位置是否大于0的原因在于,鼠标在上面的边框时也会获取位置,这有可能导致超出边界
         if Position1.y > 0 and isBreaking == false then
             if Resource.Map[Position1.y][Position1.x] ~= 0 then
                 isBreaking = true
                 tempHardness = Resource.Hardness[Resource.Map[Position1.y][Position1.x]]
                 BreakingBlock = tempHardness
-                crackRect.x, crackRect.y = (Position1.x - 1) * 30 - Resource.Camera.Rect.x, (Position1.y - 1) * 30 - Resource.Camera.Rect.y
             end
         elseif isBreaking == true and BreakingBlock > 0 then
+            crackRect.x, crackRect.y = (Position1.x - 1) * 30 - Resource.Camera.Rect.x, (Position1.y - 1) * 30 - Resource.Camera.Rect.y
             BreakingBlock = BreakingBlock - 1
             local progress = BreakingBlock / tempHardness
             if progress >= 0.75 and progress < 1 then
@@ -276,11 +277,17 @@ function TheWorld.Update()
             BreakingBlock = 0
             isBreaking = false
         end
-    elseif Position2.x ~= Position1.x or Position2.y ~= Position1.y then
+    elseif Position2.x ~= Position1.x or Position2.y ~= Position1.y or _CursorState.left == false then
         isBreaking = false
         BreakingBlock = 0
     end
     Position2.x, Position2.y = Position1.x, Position1.y
+
+    --如果按下右键,则返回鼠标信息
+    if _CursorState.right then
+        Debug.ConsoleLog("当前鼠标在屏幕位置("..CursorPosition.x..","..CursorPosition.y..")")
+        Debug.ConsoleLog("当前鼠标在世界位置("..CursorPosition.x + Resource.Camera.Rect.x..","..CursorPosition.y + Resource.Camera.Rect.y..")")
+    end
 
     Window.UpdateWindow()
 end

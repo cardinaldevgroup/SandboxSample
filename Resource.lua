@@ -1,3 +1,4 @@
+Debug = UsingModule("Debug")
 Graphic = UsingModule("Graphic")
 
 Resource = {}
@@ -6,14 +7,13 @@ Resource.simhei = Graphic.LoadFontFromFile("Resource/Font/simhei.ttf", 50)
 Resource.block = Graphic.LoadImageFromFile("Resource/Image/block.png")
 Resource.sky = Graphic.LoadImageFromFile("Resource/Image/Sky.png")
 Resource.mountain = Graphic.LoadImageFromFile("Resource/Image/Mountain.png")
+Resource.cracks = Graphic.LoadImageFromFile("Resource/Image/Crack.png")
 
 local block = Graphic.CreateTexture(Resource.block)
 
 --绿幕贴图
 Resource.CharacterImage = Graphic.LoadImageFromFile("Resource/Image/Character.png")
 Resource.CharacterImage:SetColorKey(true, {r = 0, g = 255, b = 0, a = 255})
-Resource.cracks = Graphic.LoadImageFromFile("Resource/Image/Crack.png")
-Resource.cracks:SetColorKey(true, {r = 0, g = 255, b = 0, a = 255})
 
 --初始主角信息
 Resource.Leader =
@@ -61,7 +61,7 @@ for i = 1, 4 do
 end
 
 --所有方块的硬度
-Resource.Hardness = {40, 40, 80, 80, 80, 60, 20}
+Resource.Hardness = {40, 40, 100, 100, 100, 60, 20}
 
 --生成一个400格高,2000格宽的世界(规模有点大呢)
 Resource.Map = {}
@@ -76,6 +76,7 @@ function Resource.CreateWorld()
             Resource.Map[i][j] = 0
         end
     end
+    Debug.ConsoleLog("正在生成泥土,5%")
     for i = 200, 210 do
         for j = 1, 2000 do
             Resource.Map[i][j] = 1
@@ -84,19 +85,19 @@ function Resource.CreateWorld()
     for j = 1, 2000 do
         Resource.Map[200][j] = 2
     end
-    print("正在生成石头,20%")
+    Debug.ConsoleLog("正在生成石块,20%")
     for i = 211, 400 do
         for j = 1, 2000 do
             Resource.Map[i][j] = 3
         end
     end
-    print("正在生成矿石,50%")
+    Debug.ConsoleLog("正在生成矿石,60%")
     for j = 1, mineralAmount do
         local xPosition = math.random(1, 2000)
         local yPosition = math.random(211, 400)
         Resource.Map[yPosition][xPosition] = math.random(4, 5)
     end
-    print("正在生成树,75%")
+    Debug.ConsoleLog("正在生成树,80%")
     for j = 1, treeAmount do
         local nPosition = math.random(1, 2000)
         local nHeight = math.random(5, 7)
@@ -112,7 +113,7 @@ function Resource.CreateWorld()
         end
         Resource.Map[199 - nHeight - 2][nPosition] = 7
     end
-    print("超平坦世界生成完毕")
+    Debug.ConsoleLog("超平坦世界生成完毕,100%")
 end
 
 --对象表,每个对象应当拥有Rect(绘制矩形),Image(纹理数据),layer(图层)
