@@ -297,8 +297,8 @@ function TheWorld.Update()
 
     --如果按下中键,则返回鼠标信息
     if _CursorState.middle then
-        Debug.ConsoleLog("当前鼠标在屏幕位置("..CursorPosition.x..","..CursorPosition.y..")")
-        Debug.ConsoleLog("当前鼠标在世界位置("..CursorPosition.x + Resource.Camera.Rect.x..","..CursorPosition.y + Resource.Camera.Rect.y..")")
+        Debug.ConsoleLog(string.format("当前鼠标在屏幕位置(%d, %d)", CursorPosition.x, CursorPosition.y))
+        Debug.ConsoleLog(string.format("当前鼠标在屏幕位置(%d, %d)", CursorPosition.x + Resource.Camera.Rect.x, CursorPosition.y + Resource.Camera.Rect.y))
     end
 
     Window.UpdateWindow()
