@@ -17,36 +17,47 @@ local _output_file = nil
 local function _gen_log_str(content, type)
     content = content or ""
 
-    if _show_caller_info then
-        local _debug_info = debug.getinfo(3)
-        content = string.format(
-            "[%s[%s]:%s]",
-            _debug_info.short_src,
-            _debug_info.currentline,
-            _debug_info.name
-        )..content
-    end
+    -- if _show_caller_info then
+    --     local _debug_info = debug.getinfo(3)
+    --     content = string.format(
+    --         "[%s[%s]:%s]",
+    --         _debug_info.short_src,
+    --         _debug_info.currentline,
+    --         _debug_info.name
+    --     )..content
+    -- end
 
-    if _show_time then
-        content = string.format(
-            "[%s]",
-            os.date("%y-%m-%d %H:%M:%S")
-        )..content
-    end
+    -- if _show_time then
+    --     content = string.format(
+    --         "[%s]",
+    --         os.date("%y-%m-%d %H:%M:%S")
+    --     )..content
+    -- end
 
-    if _show_info_type then
-        if type == _module.INFO then
-            content = "[INFO]"..content
-        elseif type == _module.WARNING then
-            content = "[WARN]"..content
-        elseif type == _module.ERROR then
-            content = "[ERROR]"..content
-        else
-            content = "[INFO]"..content
-        end
-    end
+    -- if _show_info_type then
+    --     if type == _module.INFO then
+    --         content = "[INFO]"..content
+    --     elseif type == _module.WARNING then
+    --         content = "[WARN]"..content
+    --     elseif type == _module.ERROR then
+    --         content = "[ERROR]"..content
+    --     else
+    --         content = "[INFO]"..content
+    --     end
+    -- end
 
-    return content
+    -- return content
+
+    local _debug_info = debug.getinfo(3)
+    
+    return string.format(
+        "[INFO][%s][%s[%s]:%s]%s", 
+        os.date("%y-%m-%d %H:%M:%S"),  
+        _debug_info.short_src,
+        _debug_info.currentline,
+        _debug_info.name,
+        content
+    )
 end
 
 --[[
