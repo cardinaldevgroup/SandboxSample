@@ -333,7 +333,7 @@ function TheWorld.Update()
                     Resource.Leader.ItemColumn[i].Amount = Resource.Leader.ItemColumn[i].Amount + 1
                     isFound = true
                     break
-                elseif theBlank == 0 and Resource.Leader.ItemColumn[i].Material == 0 then
+                elseif theBlank == 0 and Resource.Leader.ItemColumn[i].Material == 0 and not isFound then
                     theBlank = i
                 end
             end
@@ -345,13 +345,13 @@ function TheWorld.Update()
                             Resource.Leader.Knapsack[i][j].Amount = Resource.Leader.Knapsack[i][j].Amount + 1
                             isFound = true
                             break
-                        elseif theBlank == 0 and Resource.Leader.Knapsack[i][j].Material == 0 then
+                        elseif theBlank == 0 and Resource.Leader.Knapsack[i][j].Material == 0 and not isFound then
                             theBlank = i
                         end
                     end
                 end
             end
-            if theBlank ~= 0 then
+            if theBlank ~= 0 and not isFound then
                 Resource.Leader.ItemColumn[theBlank].Material = Resource.Map[Position1.y][Position1.x]
                 Resource.Leader.ItemColumn[theBlank].Amount = 1
                 theBlank = 0
@@ -396,7 +396,8 @@ function TheWorld.Update()
     Resource.ColumnOutput(isKnapsackOpen, selectItem)
 
     --放置方块
-    if Resource.Leader.ItemColumn[selectItem].Material ~= 0 and Resource.Map[Position1.y][Position1.x] == 0 and _CursorState.right and not isKnapsackOpen then
+    if Resource.Leader.ItemColumn[selectItem].Material ~= 0 and Resource.Map[Position1.y][Position1.x] == 0 and _CursorState.right and not isKnapsackOpen 
+    and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 120 then
         Resource.Map[Position1.y][Position1.x] = Resource.Leader.ItemColumn[selectItem].Material
         Resource.Leader.ItemColumn[selectItem].Amount = Resource.Leader.ItemColumn[selectItem].Amount - 1
         if Resource.Leader.ItemColumn[selectItem].Amount <= 0 then

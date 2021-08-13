@@ -256,7 +256,7 @@ local theHold =
 {
     Material = 0,
     Amount = 0,
-    Rect = {x = 0, y = 0, w = 50, h = 50},
+    Rect = {x = 0, y = 0, w = 30, h = 30},
     AmountRect = {x = 0, y = 0, w = 20, h = 20}
 }
 function Resource.KnapsackMove(CursorPosition, leftButtonUp)
@@ -281,19 +281,22 @@ function Resource.KnapsackMove(CursorPosition, leftButtonUp)
             Resource.Leader.Knapsack[thePositionY][thePositionX].Material = 0
             Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = 0
         end
-    end
     --再次点击即可把物品放在物品栏里
-    if CursorPosition.x >= _columnRect.x and CursorPosition.x <= _columnRect.x + _columnRect.w
+    elseif CursorPosition.x >= _columnRect.x and CursorPosition.x <= _columnRect.x + _columnRect.w
     and CursorPosition.y >= _columnRect.y and CursorPosition.y <= _columnRect.y + _columnRect.h and leftButtonUp and theHold.Material ~= 0 then
         local thePosition = math.floor((CursorPosition.x + 20) / 50)
         --如果该格物品栏已经有东西就互相交换,没有就直接放上去
-        if Resource.Leader.ItemColumn[thePosition].Material ~= 0 then
+        if Resource.Leader.ItemColumn[thePosition].Material ~= 0 and Resource.Leader.Knapsack[thePosition].Material ~= theHold.Material then
             local tempMaterial = theHold.Material
             local tempAmount = theHold.Amount
             theHold.Material = Resource.Leader.ItemColumn[thePosition].Material
             theHold.Amount = Resource.Leader.ItemColumn[thePosition].Amount
-            Resource.Leader.ItemColumn[thePosition].Material = theHold.Material
-            Resource.Leader.ItemColumn[thePosition].Amount = theHold.Amount
+            Resource.Leader.ItemColumn[thePosition].Material = tempMaterial
+            Resource.Leader.ItemColumn[thePosition].Amount = tempAmount
+        elseif Resource.Leader.ItemColumn[thePosition].Material == theHold.Material then
+            Resource.Leader.ItemColumn[thePosition].Amount = Resource.Leader.ItemColumn[thePosition].Amount + theHold.Amount
+            theHold.Material = 0
+            theHold.Amount = 0
         else
             Resource.Leader.ItemColumn[thePosition].Material = theHold.Material
             Resource.Leader.ItemColumn[thePosition].Amount = theHold.Amount
@@ -304,14 +307,18 @@ function Resource.KnapsackMove(CursorPosition, leftButtonUp)
     and CursorPosition.y >= _knapsackRect.y + 150 and CursorPosition.y <= _knapsackRect.y + _knapsackRect.h + 150 and leftButtonUp and theHold.Material ~= 0 then
         local thePositionX = math.floor((CursorPosition.x + 20) / 50)
         local thePositionY = math.floor((CursorPosition.y - 200) / 50)
-        --如果该格物品栏已经有东西就互相交换,没有就直接放上去
-        if Resource.Leader.Knapsack[thePositionY][thePositionX].Material ~= 0 then
+        --如果该格物品栏已经有东西就互相交换,如果一样就合并,没有就直接放上去
+        if Resource.Leader.Knapsack[thePositionY][thePositionX].Material ~= 0 and Resource.Leader.Knapsack[thePositionY][thePositionX].Material ~= theHold.Material then
             local tempMaterial = theHold.Material
             local tempAmount = theHold.Amount
             theHold.Material = Resource.Leader.Knapsack[thePositionY][thePositionX].Material
             theHold.Amount = Resource.Leader.Knapsack[thePositionY][thePositionX].Amount
-            Resource.Leader.Knapsack[thePositionY][thePositionX].Material = theHold.Material
-            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = theHold.Amount
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Material = tempMaterial
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = tempAmount
+        elseif Resource.Leader.Knapsack[thePositionY][thePositionX].Material == theHold.Material then
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = Resource.Leader.Knapsack[thePositionY][thePositionX].Amount + theHold.Amount
+            theHold.Material = 0
+            theHold.Amount = 0
         else
             Resource.Leader.Knapsack[thePositionY][thePositionX].Material = theHold.Material
             Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = theHold.Amount
