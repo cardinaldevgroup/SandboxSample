@@ -10,10 +10,12 @@ Resource.mountain = Graphic.LoadImageFromFile("Resource/Image/Mountain.png")
 Resource.cracks = Graphic.LoadImageFromFile("Resource/Image/Crack.png")
 Resource._itemColumn = Graphic.LoadImageFromFile("Resource/Image/ItemColumn.png")
 Resource._select = Graphic.LoadImageFromFile("Resource/Image/Select.png")
+Resource._knapsack = Graphic.LoadImageFromFile("Resource/Image/Knapsack.png")
 
 local block = Graphic.CreateTexture(Resource.block)
 local itemColumn = Graphic.CreateTexture(Resource._itemColumn)
 local select = Graphic.CreateTexture(Resource._select)
+local knapsack = Graphic.CreateTexture(Resource._knapsack)
 
 --绿幕贴图
 Resource.CharacterImage = Graphic.LoadImageFromFile("Resource/Image/Character.png")
@@ -31,7 +33,8 @@ Resource.Leader =
     yMaxSpeed = 15,
     Acceleration = 0.8,
     JumpAbility = 10,
-    ItemColumn = {}
+    ItemColumn = {},
+    Knapsack = {}
     --Health = 20,
     --Hunger = 100,
 }
@@ -178,11 +181,13 @@ function Resource.Camera.Output()
 end
 
 --背包,物品栏模块
-local ColumnRect = {x = 30, y = 30, w = 450, h = 50}
+local _columnRect = {x = 30, y = 30, w = 450, h = 50}
 local _itemRect = {x = 0, y = 40, w = 30, h = 30}
 local _amountRect = {x = 0, y = 60, w = 20 , h = 20}
 local whiteRGB = {r = 255, g = 255, b = 255, a = 255}
-local SelectRect = {x = 30, y = 30, w = 50, h = 50}
+local _selectRect = {x = 30, y = 30, w = 50, h = 50}
+local _knapsackRect = {x = 30, y = 100, w = 450, h = 300}
+local _characterRect = {x = 40, y = 130, w = 30, h = 90}
 
 --初始化物品栏和背包
 function Resource.KnapsackInit()
@@ -193,13 +198,23 @@ function Resource.KnapsackInit()
             Amount = 0
         }
     end
+    for i = 1, 3 do
+        Resource.Leader.Knapsack[i] = {}
+        for j = 1, 9 do
+            Resource.Leader.Knapsack[i][j] =
+            {
+                Material = 0,
+                Amount = 0
+            }
+        end
+    end
 end
 
 function Resource.ColumnOutput(isKnapsackOpen, selectItem)
-    Graphic.CopyTexture(itemColumn, ColumnRect)
+    Graphic.CopyTexture(itemColumn, _columnRect)
     for i = 1, 9 do
         if Resource.Leader.ItemColumn[i].Material ~= 0 and Resource.Leader.ItemColumn[i].Amount ~= 0 then
-            _itemRect.x = ColumnRect.x + (i - 1) * 50 + 10
+            _itemRect.x = _columnRect.x + (i - 1) * 50 + 10
             Graphic.CopyReshapeTexture(block, Material[Resource.Leader.ItemColumn[i].Material].Rect, _itemRect)
             if Resource.Leader.ItemColumn[i].Amount ~= 1 then
                 local _amount = Graphic.CreateUTF8TextImageBlended(Resource.simhei, Resource.Leader.ItemColumn[i].Amount, whiteRGB)
@@ -209,8 +224,111 @@ function Resource.ColumnOutput(isKnapsackOpen, selectItem)
             end
         end
         if i == selectItem then
-            SelectRect.x = (i - 1) * 50 + 30
-            Graphic.CopyTexture(select, SelectRect)
+            _selectRect.x = (i - 1) * 50 + 30
+            Graphic.CopyTexture(select, _selectRect)
+        end
+    end
+    if isKnapsackOpen then
+        Graphic.CopyTexture(knapsack, _knapsackRect)
+        Graphic.CopyTexture(Resource.Leader.Image, _characterRect)
+        for i = 1, 3 do
+            for j = 1, 9 do
+                if Resource.Leader.Knapsack[i][j].Material ~= 0 and Resource.Leader.Knapsack[i][j].Amount ~= 0 then
+                    _itemRect.x = _knapsackRect.x + (j - 1) * 50 + 10
+                    _itemRect.y = _knapsackRect.y + (i - 1) * 50 + 160
+                    Graphic.CopyReshapeTexture(block, Material[Resource.Leader.Knapsack[i][j].Material].Rect, _itemRect)
+                    if Resource.Leader.Knapsack[i][j].Amount ~= 1 then
+                        local _amount = Graphic.CreateUTF8TextImageBlended(Resource.simhei, Resource.Leader.Knapsack[i][j].Amount, whiteRGB)
+                        local amount = Graphic.CreateTexture(_amount)
+                        _amountRect.x = _itemRect.x + 20
+                        _amountRect.y = _itemRect.y + 20
+                        Graphic.CopyTexture(amount, _amountRect)
+                    end
+                end
+            end
+        end
+    end
+    _amountRect.y = 60
+    _itemRect.y = 40
+end
+
+local theHold =
+{
+    Material = 0,
+    Amount = 0,
+    Rect = {x = 0, y = 0, w = 50, h = 50},
+    AmountRect = {x = 0, y = 0, w = 20, h = 20}
+}
+function Resource.KnapsackMove(CursorPosition, leftButtonUp)
+    --检测鼠标是否在物品栏的矩形范围内,如果玩家左键点击且还没有选择物品
+    if CursorPosition.x >= _columnRect.x and CursorPosition.x <= _columnRect.x + _columnRect.w
+    and CursorPosition.y >= _columnRect.y and CursorPosition.y <= _columnRect.y + _columnRect.h and leftButtonUp and theHold.Material == 0 then
+        local thePosition = math.floor((CursorPosition.x + 20) / 50)
+        if Resource.Leader.ItemColumn[thePosition].Material ~= 0 then
+            theHold.Material = Resource.Leader.ItemColumn[thePosition].Material
+            theHold.Amount = Resource.Leader.ItemColumn[thePosition].Amount
+            Resource.Leader.ItemColumn[thePosition].Material = 0
+            Resource.Leader.ItemColumn[thePosition].Amount = 0
+        end
+        --检测鼠标是否在背包的矩形范围内,如果玩家左键点击且还没有选择物品
+    elseif CursorPosition.x >= _knapsackRect.x and CursorPosition.x <= _knapsackRect.x + _knapsackRect.w
+    and CursorPosition.y >= _knapsackRect.y + 150 and CursorPosition.y <= _knapsackRect.y + _knapsackRect.h + 150 and leftButtonUp and theHold.Material == 0 then
+        local thePositionX = math.floor((CursorPosition.x + 20) / 50)
+        local thePositionY = math.floor((CursorPosition.y - 200) / 50)
+        if Resource.Leader.Knapsack[thePositionY][thePositionX].Material ~= 0 then
+            theHold.Material = Resource.Leader.Knapsack[thePositionY][thePositionX].Material
+            theHold.Amount = Resource.Leader.Knapsack[thePositionY][thePositionX].Amount
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Material = 0
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = 0
+        end
+    end
+    --再次点击即可把物品放在物品栏里
+    if CursorPosition.x >= _columnRect.x and CursorPosition.x <= _columnRect.x + _columnRect.w
+    and CursorPosition.y >= _columnRect.y and CursorPosition.y <= _columnRect.y + _columnRect.h and leftButtonUp and theHold.Material ~= 0 then
+        local thePosition = math.floor((CursorPosition.x + 20) / 50)
+        --如果该格物品栏已经有东西就互相交换,没有就直接放上去
+        if Resource.Leader.ItemColumn[thePosition].Material ~= 0 then
+            local tempMaterial = theHold.Material
+            local tempAmount = theHold.Amount
+            theHold.Material = Resource.Leader.ItemColumn[thePosition].Material
+            theHold.Amount = Resource.Leader.ItemColumn[thePosition].Amount
+            Resource.Leader.ItemColumn[thePosition].Material = theHold.Material
+            Resource.Leader.ItemColumn[thePosition].Amount = theHold.Amount
+        else
+            Resource.Leader.ItemColumn[thePosition].Material = theHold.Material
+            Resource.Leader.ItemColumn[thePosition].Amount = theHold.Amount
+            theHold.Material = 0
+            theHold.Amount = 0
+        end
+    elseif CursorPosition.x >= _knapsackRect.x and CursorPosition.x <= _knapsackRect.x + _knapsackRect.w
+    and CursorPosition.y >= _knapsackRect.y + 150 and CursorPosition.y <= _knapsackRect.y + _knapsackRect.h + 150 and leftButtonUp and theHold.Material ~= 0 then
+        local thePositionX = math.floor((CursorPosition.x + 20) / 50)
+        local thePositionY = math.floor((CursorPosition.y - 200) / 50)
+        --如果该格物品栏已经有东西就互相交换,没有就直接放上去
+        if Resource.Leader.Knapsack[thePositionY][thePositionX].Material ~= 0 then
+            local tempMaterial = theHold.Material
+            local tempAmount = theHold.Amount
+            theHold.Material = Resource.Leader.Knapsack[thePositionY][thePositionX].Material
+            theHold.Amount = Resource.Leader.Knapsack[thePositionY][thePositionX].Amount
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Material = theHold.Material
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = theHold.Amount
+        else
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Material = theHold.Material
+            Resource.Leader.Knapsack[thePositionY][thePositionX].Amount = theHold.Amount
+            theHold.Material = 0
+            theHold.Amount = 0
+        end
+    end
+    if theHold.Material ~= 0 then
+        theHold.Rect.x = CursorPosition.x - theHold.Rect.w
+        theHold.Rect.y = CursorPosition.y - theHold.Rect.h
+        Graphic.CopyReshapeTexture(block, Material[theHold.Material].Rect, theHold.Rect)
+        if theHold.Amount ~= 0 then
+            local _amount = Graphic.CreateUTF8TextImageBlended(Resource.simhei, theHold.Amount, whiteRGB)
+            local amount = Graphic.CreateTexture(_amount)
+            theHold.AmountRect.x = theHold.Rect.x + 20
+            theHold.AmountRect.y = theHold.Rect.y + 20
+            Graphic.CopyTexture(amount, theHold.AmountRect)
         end
     end
 end

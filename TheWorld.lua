@@ -28,6 +28,8 @@ local isBreaking = false
 --背包模块相关变量
 local isKnapsackOpen = false
 local selectItem = 1
+local isFound = false
+local leftButtonUp = false
 
 function TheWorld.Init()
     TheWorld.sky = Graphic.CreateTexture(Resource.sky)
@@ -41,7 +43,7 @@ function TheWorld.Init()
 end
 
 --键盘上的某些键位是否按下
-local _KeyboardState = {E = false, one = false, two = false, three = false, four = false, five = false, six = false, seven = false, eight = false, nine = false}
+local _KeyboardState = {one = false, two = false, three = false, four = false, five = false, six = false, seven = false, eight = false, nine = false}
 --鼠标是否按下
 local _CursorState = {left = false, right = false, middle = false}
 --玩家目前按下的某个方向的键
@@ -104,14 +106,13 @@ function TheWorld.Update()
             _CursorState.middle = true
         elseif event == Interactivity.EVENT_MOUSEBTNUP_LEFT then
             _CursorState.left = false
+            leftButtonUp = true
         elseif event == Interactivity.EVENT_MOUSEBTNUP_RIGHT then
             _CursorState.right = false
         elseif event == Interactivity.EVENT_MOUSEBTNUP_MIDDLE then
             _CursorState.middle = false
-        elseif event == Interactivity.EVENT_KEYDOWN_E then
-            _KeyboardState.E = true
         elseif event == Interactivity.EVENT_KEYUP_E then
-            _KeyboardState.E = false
+            isKnapsackOpen = not isKnapsackOpen
         elseif event == Interactivity.EVENT_KEYDOWN_1 then
             _KeyboardState.one = true
         elseif event == Interactivity.EVENT_KEYUP_1 then
@@ -297,11 +298,13 @@ function TheWorld.Update()
 
     --当方块在人物6格范围内且左键按下他即可破坏掉他
     --如果鼠标对准的方块不是上一帧对准的方块则破坏重置
+    --如果背包打开也不能破坏方块
     local CursorPosition = Interactivity.GetCursorPosition()
     local PlayerPosition = {x = Resource.Leader.Rect.x + Resource.Leader.Rect.w / 2, y = Resource.Leader.Rect.y + Resource.Leader.Rect.h / 2}
     local CursorPositionW = {x = CursorPosition.x + Resource.Camera.Rect.x, y = CursorPosition.y + Resource.Camera.Rect.y}
     local Position1 = {x = math.ceil(CursorPositionW.x / 30), y = math.ceil(CursorPositionW.y / 30)}
-    if _CursorState.left and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 120 and Position2.x == Position1.x and Position2.y == Position1.y then
+    if _CursorState.left and Algorithm.GetPointsDistance(CursorPositionW, PlayerPosition) <= 120
+    and Position2.x == Position1.x and Position2.y == Position1.y and not isKnapsackOpen then
         --检测鼠标位置是否大于0的原因在于,鼠标在上面的边框时也会获取位置,这有可能导致超出边界
         if Position1.y > 0 and isBreaking == false then
             if Resource.Map[Position1.y][Position1.x] ~= 0 then
@@ -324,13 +327,28 @@ function TheWorld.Update()
             end
         elseif BreakingBlock <= 0 then
             local theBlank = 0
-            --先在物品栏里寻找有没有相同的方块,并记录下空的格子为下步操作做准备
+            --先在物品栏里寻找有没有相同的方块,并记录下空的格子为下步操作做准备,找到就将isFound记录为true不再在背包中寻找
             for i = 1, 9 do
                 if Resource.Leader.ItemColumn[i].Material == Resource.Map[Position1.y][Position1.x] then
                     Resource.Leader.ItemColumn[i].Amount = Resource.Leader.ItemColumn[i].Amount + 1
+                    isFound = true
                     break
                 elseif theBlank == 0 and Resource.Leader.ItemColumn[i].Material == 0 then
                     theBlank = i
+                end
+            end
+            --如果没找到,则继续在背包里面找找有没有
+            if isFound == false then
+                for i = 1, 3 do
+                    for j = 1, 9 do
+                        if Resource.Leader.Knapsack[i][j].Material == Resource.Map[Position1.y][Position1.x] then
+                            Resource.Leader.Knapsack[i][j].Amount = Resource.Leader.Knapsack[i][j].Amount + 1
+                            isFound = true
+                            break
+                        elseif theBlank == 0 and Resource.Leader.Knapsack[i][j].Material == 0 then
+                            theBlank = i
+                        end
+                    end
                 end
             end
             if theBlank ~= 0 then
@@ -341,6 +359,7 @@ function TheWorld.Update()
             Resource.Map[Position1.y][Position1.x] = 0
             BreakingBlock = 0
             isBreaking = false
+            isFound = false
         end
     elseif Position2.x ~= Position1.x or Position2.y ~= Position1.y or _CursorState.left == false then
         isBreaking = false
@@ -349,6 +368,8 @@ function TheWorld.Update()
     Position2.x, Position2.y = Position1.x, Position1.y
 
     --背包和物品栏模块
+
+    --选择物品栏的某个物品
     if _KeyboardState.one then
         selectItem = 1
     elseif _KeyboardState.two then
@@ -368,8 +389,14 @@ function TheWorld.Update()
     elseif _KeyboardState.nine then
         selectItem = 9
     end
+
+    --打开/关闭背包直接写在了上方的事件交互中
+
+    --绘制物品栏和背包和物品
     Resource.ColumnOutput(isKnapsackOpen, selectItem)
-    if Resource.Leader.ItemColumn[selectItem].Material ~= 0 and Resource.Map[Position1.y][Position1.x] == 0 and _CursorState.right then
+
+    --放置方块
+    if Resource.Leader.ItemColumn[selectItem].Material ~= 0 and Resource.Map[Position1.y][Position1.x] == 0 and _CursorState.right and not isKnapsackOpen then
         Resource.Map[Position1.y][Position1.x] = Resource.Leader.ItemColumn[selectItem].Material
         Resource.Leader.ItemColumn[selectItem].Amount = Resource.Leader.ItemColumn[selectItem].Amount - 1
         if Resource.Leader.ItemColumn[selectItem].Amount <= 0 then
@@ -377,6 +404,14 @@ function TheWorld.Update()
             Resource.Leader.ItemColumn[selectItem].Material = 0
         end
     end
+
+    --检测左键弹起
+
+    --背包内移动物品模块
+    if isKnapsackOpen then
+        Resource.KnapsackMove(CursorPosition, leftButtonUp)
+    end
+    leftButtonUp = false
 
     --如果按下中键,则返回鼠标信息
     --if _CursorState.middle then
