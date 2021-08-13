@@ -27,6 +27,7 @@ local isBreaking = false
 
 --背包模块相关变量
 local isKnapsackOpen = false
+local selectItem = 1
 
 function TheWorld.Init()
     TheWorld.sky = Graphic.CreateTexture(Resource.sky)
@@ -36,10 +37,11 @@ function TheWorld.Init()
     Resource.Leader.Layer = 1
     table.insert(Resource.vObjectTable, 1, Resource.Leader)
     Resource.Camera.Init(Resource.Leader)
+    Resource.KnapsackInit()
 end
 
 --键盘上的某些键位是否按下
-local _KeyboardState = {E = false}
+local _KeyboardState = {E = false, one = false, two = false, three = false, four = false, five = false, six = false, seven = false, eight = false, nine = false}
 --鼠标是否按下
 local _CursorState = {left = false, right = false, middle = false}
 --玩家目前按下的某个方向的键
@@ -110,6 +112,42 @@ function TheWorld.Update()
             _KeyboardState.E = true
         elseif event == Interactivity.EVENT_KEYUP_E then
             _KeyboardState.E = false
+        elseif event == Interactivity.EVENT_KEYDOWN_1 then
+            _KeyboardState.one = true
+        elseif event == Interactivity.EVENT_KEYUP_1 then
+            _KeyboardState.one = false
+        elseif event == Interactivity.EVENT_KEYDOWN_2 then
+            _KeyboardState.two = true
+        elseif event == Interactivity.EVENT_KEYUP_2 then
+            _KeyboardState.two = false
+        elseif event == Interactivity.EVENT_KEYDOWN_3 then
+            _KeyboardState.three = true
+        elseif event == Interactivity.EVENT_KEYUP_3 then
+            _KeyboardState.three = false
+        elseif event == Interactivity.EVENT_KEYDOWN_4 then
+            _KeyboardState.four = true
+        elseif event == Interactivity.EVENT_KEYUP_4 then
+            _KeyboardState.four = false
+        elseif event == Interactivity.EVENT_KEYDOWN_5 then
+            _KeyboardState.five = true
+        elseif event == Interactivity.EVENT_KEYUP_5 then
+            _KeyboardState.five = false
+        elseif event == Interactivity.EVENT_KEYDOWN_6 then
+            _KeyboardState.six = true
+        elseif event == Interactivity.EVENT_KEYUP_6 then
+            _KeyboardState.six = false
+        elseif event == Interactivity.EVENT_KEYDOWN_7 then
+            _KeyboardState.seven = true
+        elseif event == Interactivity.EVENT_KEYUP_7 then
+            _KeyboardState.seven = false
+        elseif event == Interactivity.EVENT_KEYDOWN_8 then
+            _KeyboardState.eight = true
+        elseif event == Interactivity.EVENT_KEYUP_8 then
+            _KeyboardState.eight = false
+        elseif event == Interactivity.EVENT_KEYDOWN_9 then
+            _KeyboardState.nine = true
+        elseif event == Interactivity.EVENT_KEYUP_9 then
+            _KeyboardState.nine = false
         end
     end
 
@@ -257,7 +295,7 @@ function TheWorld.Update()
     --摄像机输出
     Resource.Camera.Output()
 
-        --当方块在人物6格范围内且左键按下他即可破坏掉他
+    --当方块在人物6格范围内且左键按下他即可破坏掉他
     --如果鼠标对准的方块不是上一帧对准的方块则破坏重置
     local CursorPosition = Interactivity.GetCursorPosition()
     local PlayerPosition = {x = Resource.Leader.Rect.x + Resource.Leader.Rect.w / 2, y = Resource.Leader.Rect.y + Resource.Leader.Rect.h / 2}
@@ -285,6 +323,21 @@ function TheWorld.Update()
                 Graphic.CopyReshapeTexture(TheWorld.cracks, Resource.arrayCracks[4].Rect, crackRect)
             end
         elseif BreakingBlock <= 0 then
+            local theBlank = 0
+            --先在物品栏里寻找有没有相同的方块,并记录下空的格子为下步操作做准备
+            for i = 1, 9 do
+                if Resource.Leader.ItemColumn[i].Material == Resource.Map[Position1.y][Position1.x] then
+                    Resource.Leader.ItemColumn[i].Amount = Resource.Leader.ItemColumn[i].Amount + 1
+                    break
+                elseif theBlank == 0 and Resource.Leader.ItemColumn[i].Material == 0 then
+                    theBlank = i
+                end
+            end
+            if theBlank ~= 0 then
+                Resource.Leader.ItemColumn[theBlank].Material = Resource.Map[Position1.y][Position1.x]
+                Resource.Leader.ItemColumn[theBlank].Amount = 1
+                theBlank = 0
+            end
             Resource.Map[Position1.y][Position1.x] = 0
             BreakingBlock = 0
             isBreaking = false
@@ -295,11 +348,41 @@ function TheWorld.Update()
     end
     Position2.x, Position2.y = Position1.x, Position1.y
 
-    --如果按下中键,则返回鼠标信息
-    if _CursorState.middle then
-        Debug.ConsoleLog(string.format("当前鼠标在屏幕位置(%d, %d)", CursorPosition.x, CursorPosition.y))
-        Debug.ConsoleLog(string.format("当前鼠标在屏幕位置(%d, %d)", CursorPosition.x + Resource.Camera.Rect.x, CursorPosition.y + Resource.Camera.Rect.y))
+    --背包和物品栏模块
+    if _KeyboardState.one then
+        selectItem = 1
+    elseif _KeyboardState.two then
+        selectItem = 2
+    elseif _KeyboardState.three then
+        selectItem = 3
+    elseif _KeyboardState.four then
+        selectItem = 4
+    elseif _KeyboardState.five then
+        selectItem = 5
+    elseif _KeyboardState.six then
+        selectItem = 6
+    elseif _KeyboardState.seven then
+        selectItem = 7
+    elseif _KeyboardState.eight then
+        selectItem = 8
+    elseif _KeyboardState.nine then
+        selectItem = 9
     end
+    Resource.ColumnOutput(isKnapsackOpen, selectItem)
+    if Resource.Leader.ItemColumn[selectItem].Material ~= 0 and Resource.Map[Position1.y][Position1.x] == 0 and _CursorState.right then
+        Resource.Map[Position1.y][Position1.x] = Resource.Leader.ItemColumn[selectItem].Material
+        Resource.Leader.ItemColumn[selectItem].Amount = Resource.Leader.ItemColumn[selectItem].Amount - 1
+        if Resource.Leader.ItemColumn[selectItem].Amount <= 0 then
+            Resource.Leader.ItemColumn[selectItem].Amount = 0
+            Resource.Leader.ItemColumn[selectItem].Material = 0
+        end
+    end
+
+    --如果按下中键,则返回鼠标信息
+    --if _CursorState.middle then
+    --    Debug.ConsoleLog(string.format("当前鼠标在屏幕位置(%d, %d)", math.floor(CursorPosition.x), math.floor(CursorPosition.y)))
+    --    Debug.ConsoleLog(string.format("当前鼠标在世界位置(%d, %d)", math.floor(CursorPositionW.x), math.floor(CursorPositionW.y)))
+    --end
 
     Window.UpdateWindow()
 end
@@ -307,6 +390,7 @@ end
 function TheWorld.Unload()
     TheWorld.sky = nil
     TheWorld.mountain = nil
+    TheWorld.cracks = nil
 end
 
 return TheWorld

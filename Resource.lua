@@ -8,8 +8,12 @@ Resource.block = Graphic.LoadImageFromFile("Resource/Image/block.png")
 Resource.sky = Graphic.LoadImageFromFile("Resource/Image/Sky.png")
 Resource.mountain = Graphic.LoadImageFromFile("Resource/Image/Mountain.png")
 Resource.cracks = Graphic.LoadImageFromFile("Resource/Image/Crack.png")
+Resource._itemColumn = Graphic.LoadImageFromFile("Resource/Image/ItemColumn.png")
+Resource._select = Graphic.LoadImageFromFile("Resource/Image/Select.png")
 
 local block = Graphic.CreateTexture(Resource.block)
+local itemColumn = Graphic.CreateTexture(Resource._itemColumn)
+local select = Graphic.CreateTexture(Resource._select)
 
 --绿幕贴图
 Resource.CharacterImage = Graphic.LoadImageFromFile("Resource/Image/Character.png")
@@ -26,10 +30,10 @@ Resource.Leader =
     xMaxSpeed = 8,
     yMaxSpeed = 15,
     Acceleration = 0.8,
-    JumpAbility = 10
+    JumpAbility = 10,
+    ItemColumn = {}
     --Health = 20,
     --Hunger = 100,
-    --Package = {}
 }
 
 local Material = {}
@@ -170,6 +174,44 @@ function Resource.Camera.Output()
         _tempRect.x, _tempRect.y = v.Rect.x - Resource.Camera.Rect.x, v.Rect.y - Resource.Camera.Rect.y
         _tempRect.w, _tempRect.h = v.Rect.w, v.Rect.h
         Graphic.CopyTexture(v.Image, _tempRect)
+    end
+end
+
+--背包,物品栏模块
+local ColumnRect = {x = 30, y = 30, w = 450, h = 50}
+local _itemRect = {x = 0, y = 40, w = 30, h = 30}
+local _amountRect = {x = 0, y = 60, w = 20 , h = 20}
+local whiteRGB = {r = 255, g = 255, b = 255, a = 255}
+local SelectRect = {x = 30, y = 30, w = 50, h = 50}
+
+--初始化物品栏和背包
+function Resource.KnapsackInit()
+    for i = 1, 9 do
+        Resource.Leader.ItemColumn[i] =
+        {
+            Material = 0,
+            Amount = 0
+        }
+    end
+end
+
+function Resource.ColumnOutput(isKnapsackOpen, selectItem)
+    Graphic.CopyTexture(itemColumn, ColumnRect)
+    for i = 1, 9 do
+        if Resource.Leader.ItemColumn[i].Material ~= 0 and Resource.Leader.ItemColumn[i].Amount ~= 0 then
+            _itemRect.x = ColumnRect.x + (i - 1) * 50 + 10
+            Graphic.CopyReshapeTexture(block, Material[Resource.Leader.ItemColumn[i].Material].Rect, _itemRect)
+            if Resource.Leader.ItemColumn[i].Amount ~= 1 then
+                local _amount = Graphic.CreateUTF8TextImageBlended(Resource.simhei, Resource.Leader.ItemColumn[i].Amount, whiteRGB)
+                local amount = Graphic.CreateTexture(_amount)
+                _amountRect.x = _itemRect.x + 20
+                Graphic.CopyTexture(amount, _amountRect)
+            end
+        end
+        if i == selectItem then
+            SelectRect.x = (i - 1) * 50 + 30
+            Graphic.CopyTexture(select, SelectRect)
+        end
     end
 end
 
